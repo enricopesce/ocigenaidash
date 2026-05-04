@@ -1,221 +1,125 @@
-# OCI GenAI Agents Demo
+# GenAI Rifiuti
 
-A Streamlit application that provides an AI assistant specialized in environmental regulations and waste management, powered by Oracle Cloud Infrastructure (OCI) Generative AI Agents.
+Applicazione Streamlit che espone un assistente AI specializzato in normativa ambientale italiana, gestione dei rifiuti e tracciabilità RENTRI. L'app usa OCI Generative AI Agents Runtime e mostra, quando disponibili, i riferimenti RAG ai documenti della knowledge base.
 
-## Features
+## Funzionalità
 
-- 🧠 **AI-Powered Chat** - Interactive chat interface with OCI GenAI Agent
-- 🎯 **Preset Questions** - Quick access to common environmental regulation queries
-- 📚 **RAG Document Matches** - Compact document, page, source excerpt, and source-link display
-- 💬 **Chat History** - Persistent conversation history during session
-- 🌐 **Document Access** - Direct links to source documents
+- Chat interattiva con un agente OCI Generative AI Agents.
+- Domande predefinite per scenari su rifiuti, FIR, EER, HP, EPR e RENTRI.
+- Visualizzazione compatta dei documenti RAG usati nella risposta, con pagine, estratti e link sorgente.
+- Storico conversazione mantenuto nella sessione Streamlit.
+- Protezione opzionale con password hash SHA256 per deployment condivisi.
+- Riscrittura opzionale degli URL Object Storage verso URL preautenticati.
+- Test automatici per estrazione testo, citazioni, formattazione fonti e integrazione base con l'SDK OCI.
 
-## Prerequisites
+## Struttura
 
-- Python 3.12
-- Oracle Cloud Infrastructure (OCI) account
-- OCI GenAI Agent configured and deployed
-
-## Installation
-
-1. **Clone or download the project**
-   ```bash
-   git clone <your-repo-url>
-   cd oci-genai-demo
-   ```
-
-2. **Create a virtual environment**
-   ```bash
-   python3.12 -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   python -m pip install --upgrade pip
-   python -m pip install -r requirements.txt
-   ```
-
-## Configuration
-
-This application continues to use OCI Generative AI Agents Runtime through `GenerativeAiAgentRuntimeClient`; it does not call the direct OCI Generative AI inference APIs.
-
-### 1. OCI Configuration
-
-Create an OCI configuration file at `~/.oci/config`:
-
-```ini
-[DEFAULT]
-user=ocid1.user.oc1..your-user-ocid
-fingerprint=your-fingerprint
-tenancy=ocid1.tenancy.oc1..your-tenancy-ocid
-region=eu-frankfurt-1
-key_file=~/.oci/your-private-key.pem
+```text
+genairifiuti/
+├── app.py                 # Applicazione Streamlit e helper OCI/RAG
+├── kb/                    # PDF usati come knowledge base documentale
+├── tests/                 # Test pytest degli helper applicativi
+├── .env.example           # Template di configurazione locale
+├── requirements.txt       # Dipendenze runtime
+├── requirements-dev.txt   # Dipendenze di sviluppo e test
+└── README.md
 ```
 
-### 2. Environment Variables
+## Prerequisiti
 
-Create a `.env` file in the project root:
+- Python 3.12.
+- Account Oracle Cloud Infrastructure.
+- Agente OCI Generative AI Agents configurato e pubblicato.
+- File OCI CLI/API config valido in `~/.oci/config`.
 
-```env
-OCI_AGENT_ENDPOINT_ID=your-agent-endpoint-id
-OCI_SERVICE_ENDPOINT=https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com
-
-# Optional citation URL rewrite settings
-OS_URL=https://objectstorage\.eu-frankfurt-1\.oraclecloud\.com
-OS_URL_PREAUTH=https://your-replacement-url.com
-```
-
-
-## Running the Application
-
-1. **Start the Streamlit app**
-   ```bash
-   streamlit run app.py
-   ```
-
-2. **Access the application**
-   - Open your browser to `http://localhost:8501`
-
-## Project Structure
-
-```
-oci-genai-demo/
-├── app.py              # Main application file
-├── .env                # Environment variables (create this)
-├── requirements.txt    # Runtime Python dependencies
-├── requirements-dev.txt # Local test dependencies
-├── README.md          # This file
-└── .gitignore         # Git ignore file (recommended)
-```
-
-## Dependencies
-
-Runtime dependencies are declared in `requirements.txt`.
-
-For local tests, install:
+## Installazione
 
 ```bash
+git clone <repo-url>
+cd genairifiuti
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
 
-## Environment Variables Reference
+Su Windows, l'attivazione dell'ambiente virtuale è:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OCI_AGENT_ENDPOINT_ID` | ✅ Yes | Your OCI GenAI Agent endpoint ID |
-| `OCI_SERVICE_ENDPOINT` | ✅ Yes | OCI GenAI service endpoint URL |
-| `OS_URL` | No | Regex pattern for URL replacement in citations |
-| `OS_URL_PREAUTH` | No | Replacement URL for document access |
+```powershell
+.venv\Scripts\activate
+```
 
-If `OS_URL_PREAUTH` is empty, the app keeps OCI citation URLs unchanged.
+## Configurazione
 
-## Getting Your OCI Agent Endpoint ID
+Copia il template e compila i valori reali:
 
-1. Log in to OCI Console
-2. Navigate to **AI Services** → **Generative AI Agents**
-3. Select your agent
-4. Copy the **Agent Endpoint ID** from the details page
+```bash
+cp .env.example .env
+```
 
-## Running the Application
+Variabili supportate:
 
-### Local Development
+| Variabile | Obbligatoria | Descrizione |
+| --- | --- | --- |
+| `OCI_AGENT_ENDPOINT_ID` | Sì | OCID dell'endpoint dell'agente OCI GenAI Agents. |
+| `OCI_SERVICE_ENDPOINT` | Sì | Endpoint OCI Agents Runtime, ad esempio `https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com`. |
+| `PASSWORD_HASH` | No | Hash SHA256 della password di accesso. Se vuoto, il login Streamlit è disattivato. |
+| `OS_URL` | No | Pattern regex dell'URL Object Storage da sostituire nei link delle citazioni. |
+| `OS_URL_PREAUTH` | No | URL sostitutivo, tipicamente un pre-authenticated request URL. Se vuoto, i link originali restano invariati. |
+
+Per generare `PASSWORD_HASH`:
+
+```bash
+python -c "import hashlib; print(hashlib.sha256('scegli-una-password'.encode()).hexdigest())"
+```
+
+Esempio minimale di `~/.oci/config`:
+
+```ini
+[DEFAULT]
+user=ocid1.user.oc1..example
+fingerprint=00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
+tenancy=ocid1.tenancy.oc1..example
+region=eu-frankfurt-1
+key_file=~/.oci/oci_api_key.pem
+```
+
+Non committare `.env`, chiavi private o credenziali OCI. Il file `.gitignore` esclude già `.env`, `.venv`, cache Python e log locali.
+
+## Avvio
+
 ```bash
 streamlit run app.py
 ```
 
-### Production Mode
-For production-like local deployment:
-```bash
-streamlit run app.py --server.port=8501 --server.headless=true
-```
+Poi apri `http://localhost:8501`.
 
-### Background Process
-To run in background:
-```bash
-nohup streamlit run app.py > streamlit.log 2>&1 &
-```
+Per usare una porta diversa:
 
-### Different Port
-To run on a different port:
 ```bash
 streamlit run app.py --server.port=8080
 ```
 
-### Cloud Deployment (Optional)
-- **Streamlit Cloud**: Push to GitHub and connect via streamlit.io
-- **Direct server deployment**: Copy files to server and run locally
+## Test
 
-## Customization
-
-### Adding New Preset Questions
-Edit the `PRESET_QUESTIONS` list in `app.py`:
-
-```python
-PRESET_QUESTIONS = [
-    "Your new question here",
-    "Another question",
-    # ... existing questions
-]
+```bash
+python -m pytest -q
 ```
 
-### Modifying the UI
-The app uses standard Streamlit components. Customize by:
-- Changing page configuration in `st.set_page_config()`
-- Modifying titles and descriptions
-- Adding custom CSS with `st.markdown()`
+I test non chiamano OCI: usano fake client e oggetti leggeri per verificare la logica locale.
 
-### Citation URL Replacement
-Modify `OS_URL` and `OS_URL_PREAUTH` to customize how document URLs are transformed for user access.
+## Knowledge Base
 
-## Troubleshooting
+La directory `kb/` contiene i PDF normativi usati come base documentale del progetto. Prima di pubblicare o ridistribuire il repository, verifica che ciascun documento possa essere condiviso secondo la relativa licenza o fonte pubblica.
 
-### Common Issues
+## Note di Sicurezza
 
-1. **"OCI_AGENT_ENDPOINT_ID environment variable is required"**
-   - Check your `.env` file exists and contains the correct endpoint ID
+- Usa credenziali OCI con privilegi minimi.
+- Ruota periodicamente le chiavi API.
+- Non pubblicare pre-authenticated request URL se danno accesso a documenti non pubblici.
+- Per ambienti condivisi o pubblici, aggiungi un livello di autenticazione davanti all'app Streamlit.
 
-2. **"Failed to initialize OCI client"**
-   - Verify your `~/.oci/config` file is correctly configured
-   - Ensure your private key file exists and has correct permissions
+## Licenza
 
-3. **Authentication errors**
-   - Check your OCI credentials and permissions
-   - Verify your user has access to the GenAI Agent service
-
-
-### Debug Mode
-To enable detailed logging, add to your `.env`:
-```env
-DEBUG_MODE=true
-```
-
-## Security Considerations
-
-- Keep your `.env` file secure and never commit it to version control
-- Use strong passwords and rotate them regularly
-- Ensure your OCI credentials have minimal required permissions
-- Consider implementing additional authentication for production use
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For issues related to:
-- **OCI GenAI Agents**: Check OCI documentation and support
-- **This application**: Create an issue in the project repository
-- **Streamlit**: Visit streamlit.io documentation
-
----
-
-**Happy coding! 🚀**
+Distribuito con licenza MIT. Vedi `LICENSE`.

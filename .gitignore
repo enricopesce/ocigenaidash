@@ -1,7 +1,13 @@
+# Local configuration and credentials
 .env
+.streamlit/secrets.toml
+
+# Virtualenvs and Python caches
 .venv
 __pycache__/
 .pytest_cache/
-*.pyc
-streamlit.log
+*.py[cod]
+
+# Local logs and generated agent docs
+*.log
 docs/
