@@ -79,6 +79,14 @@ def test_preset_questions_include_three_difficult_rag_demo_prompts():
     assert len(app.PRESET_QUESTIONS) >= 8
 
 
+def test_public_app_name_identifies_italian_oci_agents_rag_demo():
+    public_text = f"{app.APP_TITLE} {app.APP_DESCRIPTION}"
+
+    assert "OCI Generative AI Agents" in public_text
+    assert "RAG" in public_text
+    assert "italiano" in public_text.casefold()
+
+
 def test_extract_response_text_reads_primary_message_content():
     chat_result = obj(message=obj(content=obj(text="Risposta principale")))
 

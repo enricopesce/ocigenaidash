@@ -1,4 +1,4 @@
-"""Streamlit chat app backed by OCI Generative AI Agents Runtime."""
+"""Italian Streamlit RAG demo backed by OCI Generative AI Agents Runtime."""
 
 import hashlib
 import os
@@ -11,8 +11,11 @@ import streamlit as st
 # Load local configuration for development; production can provide real env vars.
 load_dotenv()
 
-APP_TITLE = "GenAI Rifiuti"
-APP_DESCRIPTION = "Assistente AI per normative ambientali e gestione dei rifiuti"
+APP_TITLE = "OCI Generative AI Agents RAG Demo - Italiano"
+APP_DESCRIPTION = (
+    "Demo Streamlit in italiano per interrogare una knowledge base normativa "
+    "con OCI Generative AI Agents e RAG."
+)
 
 SERVICE_ENDPOINT = os.getenv("OCI_SERVICE_ENDPOINT", "")
 AGENT_ENDPOINT_ID = os.getenv("OCI_AGENT_ENDPOINT_ID", "")

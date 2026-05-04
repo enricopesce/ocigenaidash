@@ -1,27 +1,47 @@
-# GenAI Rifiuti
+# OCI Generative AI Agents RAG Demo - Italiano
 
-Applicazione Streamlit che espone un assistente AI specializzato in normativa ambientale italiana, gestione dei rifiuti e tracciabilità RENTRI. L'app usa OCI Generative AI Agents Runtime e mostra, quando disponibili, i riferimenti RAG ai documenti della knowledge base.
+Demo Streamlit in italiano che mostra come usare **OCI Generative AI Agents** con un flusso **RAG** per rispondere a domande su normativa ambientale, gestione dei rifiuti e tracciabilita RENTRI.
 
-## Funzionalità
+Il progetto non e un prodotto finito: e una base didattica e dimostrativa per collegare una UI Python leggera a un Agent endpoint OCI, leggere la risposta dell'agente e mostrare i riferimenti documentali restituiti dalla knowledge base.
 
-- Chat interattiva con un agente OCI Generative AI Agents.
-- Domande predefinite per scenari su rifiuti, FIR, EER, HP, EPR e RENTRI.
-- Visualizzazione compatta dei documenti RAG usati nella risposta, con pagine, estratti e link sorgente.
-- Storico conversazione mantenuto nella sessione Streamlit.
-- Protezione opzionale con password hash SHA256 per deployment condivisi.
-- Riscrittura opzionale degli URL Object Storage verso URL preautenticati.
-- Test automatici per estrazione testo, citazioni, formattazione fonti e integrazione base con l'SDK OCI.
+## Cosa Dimostra
 
-## Struttura
+- Integrazione con **OCI Generative AI Agents Runtime** tramite SDK Python OCI.
+- Chat Streamlit in italiano con domande predefinite su rifiuti, EER, FIR, HP, EPR e RENTRI.
+- Recupero e normalizzazione di risposte generate dall'agente, inclusi payload di tool e output RAG.
+- Visualizzazione compatta delle fonti RAG: documenti, pagine, estratti e link.
+- Riscrittura opzionale dei link Object Storage verso URL preautenticati.
+- Protezione opzionale con password hash SHA256 per demo condivise.
+- Test locali senza chiamate reali a OCI, basati su fake client e oggetti leggeri.
+
+## Architettura
 
 ```text
-genairifiuti/
-├── app.py                 # Applicazione Streamlit e helper OCI/RAG
-├── kb/                    # PDF usati come knowledge base documentale
+Browser
+  |
+  v
+Streamlit app.py
+  |
+  v
+OCI Generative AI Agents Runtime
+  |
+  v
+Agent + knowledge base RAG su documenti normativi
+```
+
+La cartella `kb/` contiene PDF normativi usati come materiale documentale della demo. L'app non indicizza direttamente i file locali a runtime: interroga l'Agent endpoint OCI gia configurato con la propria knowledge base.
+
+## Struttura Repository
+
+```text
+oci-generative-ai-agents-rag-demo-it/
+├── app.py                 # UI Streamlit, chiamate OCI e formattazione RAG
+├── kb/                    # Documenti normativi usati per la knowledge base
 ├── tests/                 # Test pytest degli helper applicativi
-├── .env.example           # Template di configurazione locale
+├── .env.example           # Template delle variabili locali
 ├── requirements.txt       # Dipendenze runtime
-├── requirements-dev.txt   # Dipendenze di sviluppo e test
+├── requirements-dev.txt   # Dipendenze test/sviluppo
+├── LICENSE
 └── README.md
 ```
 
@@ -29,14 +49,16 @@ genairifiuti/
 
 - Python 3.12.
 - Account Oracle Cloud Infrastructure.
-- Agente OCI Generative AI Agents configurato e pubblicato.
-- File OCI CLI/API config valido in `~/.oci/config`.
+- OCI Generative AI Agent creato, configurato e pubblicato.
+- Agent endpoint ID disponibile.
+- Knowledge base RAG collegata all'agente.
+- File OCI config valido in `~/.oci/config`.
 
 ## Installazione
 
 ```bash
-git clone <repo-url>
-cd genairifiuti
+git clone https://github.com/enricopesce/oci-generative-ai-agents-rag-demo-it.git
+cd oci-generative-ai-agents-rag-demo-it
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -44,7 +66,7 @@ python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
 
-Su Windows, l'attivazione dell'ambiente virtuale è:
+Su Windows:
 
 ```powershell
 .venv\Scripts\activate
@@ -52,23 +74,30 @@ Su Windows, l'attivazione dell'ambiente virtuale è:
 
 ## Configurazione
 
-Copia il template e compila i valori reali:
+Copia il template:
 
 ```bash
 cp .env.example .env
 ```
 
-Variabili supportate:
+Compila almeno:
+
+```env
+OCI_AGENT_ENDPOINT_ID=ocid1.genaiagentendpoint.oc1.eu-frankfurt-1...
+OCI_SERVICE_ENDPOINT=https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com
+```
+
+Variabili disponibili:
 
 | Variabile | Obbligatoria | Descrizione |
 | --- | --- | --- |
-| `OCI_AGENT_ENDPOINT_ID` | Sì | OCID dell'endpoint dell'agente OCI GenAI Agents. |
-| `OCI_SERVICE_ENDPOINT` | Sì | Endpoint OCI Agents Runtime, ad esempio `https://agent-runtime.generativeai.eu-frankfurt-1.oci.oraclecloud.com`. |
-| `PASSWORD_HASH` | No | Hash SHA256 della password di accesso. Se vuoto, il login Streamlit è disattivato. |
+| `OCI_AGENT_ENDPOINT_ID` | Si | OCID dell'endpoint OCI Generative AI Agent. |
+| `OCI_SERVICE_ENDPOINT` | Si | Endpoint OCI Agents Runtime della region scelta. |
+| `PASSWORD_HASH` | No | Hash SHA256 della password di accesso alla demo. Se vuoto, il login e disattivato. |
 | `OS_URL` | No | Pattern regex dell'URL Object Storage da sostituire nei link delle citazioni. |
-| `OS_URL_PREAUTH` | No | URL sostitutivo, tipicamente un pre-authenticated request URL. Se vuoto, i link originali restano invariati. |
+| `OS_URL_PREAUTH` | No | URL sostitutivo, ad esempio un pre-authenticated request URL. Se vuoto, i link originali restano invariati. |
 
-Per generare `PASSWORD_HASH`:
+Per generare un hash password:
 
 ```bash
 python -c "import hashlib; print(hashlib.sha256('scegli-una-password'.encode()).hexdigest())"
@@ -85,17 +114,19 @@ region=eu-frankfurt-1
 key_file=~/.oci/oci_api_key.pem
 ```
 
-Non committare `.env`, chiavi private o credenziali OCI. Il file `.gitignore` esclude già `.env`, `.venv`, cache Python e log locali.
-
 ## Avvio
 
 ```bash
 streamlit run app.py
 ```
 
-Poi apri `http://localhost:8501`.
+Apri:
 
-Per usare una porta diversa:
+```text
+http://localhost:8501
+```
+
+Porta alternativa:
 
 ```bash
 streamlit run app.py --server.port=8080
@@ -107,18 +138,32 @@ streamlit run app.py --server.port=8080
 python -m pytest -q
 ```
 
-I test non chiamano OCI: usano fake client e oggetti leggeri per verificare la logica locale.
+I test non chiamano OCI. Verificano helper, parsing delle risposte Agent Runtime, deduplica citazioni, formattazione fonti RAG, password opzionale e comportamento base dell'app.
 
-## Knowledge Base
+## Note sulla Demo RAG
 
-La directory `kb/` contiene i PDF normativi usati come base documentale del progetto. Prima di pubblicare o ridistribuire il repository, verifica che ciascun documento possa essere condiviso secondo la relativa licenza o fonte pubblica.
+Questa demo assume che il lavoro RAG principale sia configurato lato OCI:
 
-## Note di Sicurezza
+- documenti caricati o indicizzati nella knowledge base dell'agente;
+- tool RAG collegato all'agent;
+- endpoint agente pubblicato;
+- permessi OCI corretti per l'utente/API key usata localmente.
 
-- Usa credenziali OCI con privilegi minimi.
-- Ruota periodicamente le chiavi API.
-- Non pubblicare pre-authenticated request URL se danno accesso a documenti non pubblici.
-- Per ambienti condivisi o pubblici, aggiungi un livello di autenticazione davanti all'app Streamlit.
+`app.py` si occupa della parte applicativa: invia la domanda, legge la risposta, cerca testo e citazioni nei possibili payload dell'SDK e mostra all'utente i match documentali piu utili.
+
+## Sicurezza
+
+- Non committare `.env`, chiavi private OCI o URL preautenticati sensibili.
+- Usa policy OCI con privilegi minimi.
+- Imposta `PASSWORD_HASH` se la demo e esposta fuori dal tuo ambiente locale.
+- Verifica i diritti di redistribuzione dei PDF in `kb/` prima di pubblicare o riusare il repository in altri contesti.
+
+## Limiti Noti
+
+- L'app non crea ne configura l'agente OCI: devi prepararlo prima in OCI.
+- La qualita delle risposte dipende da knowledge base, prompt, modello e configurazione dell'Agent.
+- La password opzionale e adatta a una demo leggera, non sostituisce un sistema di autenticazione enterprise.
+- Le risposte su temi normativi vanno verificate sulle fonti ufficiali.
 
 ## Licenza
 
